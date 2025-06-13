@@ -1,15 +1,17 @@
 # Manual monitorización con Prometheus + Grafana
+## Prometheus
+Prometheus es un software especializado como sistema de monitorización y alertas. Prometheus consulta endpoints de servicios que exponen métricas en /metrics, guarda esos datos en su base de datos interna como series temporales. Es posible consultar esas métricas desde la interfaz web conectandolo a Grafana, donde también se pueden configurar alertas que se disparen cuando ciertas condiciones se cumplan.
 
-**Objetivo**  
-Tener gráficas y alertas en <15 min para los nodos SeaVault (gateway, repositorio, servidores Seafile).
+## 1. Entorno
+Este manual se ha concebido y elaborado específicamente para un entorno compuesto por máquinas virtuales en VirtualBox que ejecutan distintas ediciones de Ubuntu.
 
-## 1 · Requisitos
 | Host | Rol | Paquetes necesarios |
 |------|-----|--------------------|
-| **SVmonitor** | Prometheus + Grafana | `prometheus` `grafana` `node_exporter` |
-| **Todos los nodos** | Exportar métricas | `node_exporter` |
+| SVmonitor | Prometheus + Grafana | `prometheus` `grafana` `node-exporter` |
+| Todos los nodos | Exportar métricas | `node-exporter` |
 ---
-## 2 · Instalación (Ubuntu 22.04)
+## 2. Instalación (Ubuntu 22.04)
+### 2.1. SVmonitor
 ```bash
 # ---------- Prometheus ----------
 curl -s https://api.github.com/repos/prometheus/prometheus/releases/latest \
@@ -46,7 +48,7 @@ sudo add-apt-repository "deb https://packages.grafana.com/oss/deb stable main"
 sudo apt-get update && sudo apt-get install -y grafana
 sudo systemctl enable --now grafana-server
 ```
-## 3. En cada nodo
+### 2.2. En cada nodo
 ```bash
 # ---------- Node exporter ----------
 useradd -rs /bin/false node_exporter
@@ -69,44 +71,41 @@ EOF
 sudo systemctl daemon-reload && sudo systemctl enable --now node_exporter
 ```
 
-# Paneles Grafana para SeaVault 
-**Objetivo**  
-Tener un cuadro de mando útil en 10-15 min (CPU, uso disco, latencia de login, velocidad de subida y eventos de fail-over) **sin tocar la instalación de Prometheus/Grafana**.
-
-## 1. Añadir _data-source_: Prometheus
-1. Inicia sesión en Grafana (`http://SVmonitor:3000`, admin/admin).  
-2. Sidebar → **Gear ▸ Data sources** → **Add data source**.  
-3. Selecciona **Prometheus** y poner la URL `http://localhost:9090`.  
-4. **Save & test** → mensaje **Data source is working**.
+## 3. Paneles Grafana para SeaVault 
+### 3.1. Añadir _data-source_: Prometheus
+1. Iniciar sesión en Grafana (`http://SVmonitor:3000`, admin/admin).  
+2. Gear → Data sources → Add data source.  
+3. Seleccionar Prometheus y poner la URL `http://localhost:9090`.  
+4. Save & test
 
 ---
-## 2. Crear un _Dashboard_
-1. Sidebar → **+ Create ▸ Dashboard** → **Add a new panel**.  
-2. Elige tu data-source **Prometheus** arriba a la derecha.  
-3. Escribe la primera consulta:
-
+### 3.2. Crear un _Dashboard_
+1. Create → Dashboard →Add a new panel.  
+2. Elegir como data-source Prometheus.  
+3. Escribir la primera consulta:
    ```promql
    rate(node_cpu_seconds_total{mode!="idle"}[5m]) * 100
    ```
-4. Cambia la visualización a Gauge → Title = “CPU %”.
+4. Cambiar la visualización a Gauge → Title = “CPU %”.
 5. Apply.
 
-## 3. Paneles básicos recomendados
+### 3.3. Paneles básicos recomendados
 | Métrica                | Consulta PromQL                                                             | Vista       |
 | ---------------------- | --------------------------------------------------------------------------- | ----------- |
-| **CPU %**              | `rate(node_cpu_seconds_total{mode!="idle",instance="$instance"}[5m]) * 100` | Gauge       |
-| **RAM usada (GB)**     | `(node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes) / 1e9`       | Time series |
-| **Disco usado %**      | `100 - (node_filesystem_free_bytes / node_filesystem_size_bytes * 100)`     | Gauge       |
-| **Latencia login p95** | `histogram_quantile(0.95, rate(seafile_login_duration_seconds_bucket[5m]))` | Bar gauge   |
-| **Subida MB/s**        | `rate(seafile_upload_bytes_total[1m]) / 1e6`                                | Time series |
-| **Eventos fail-over**  | `changes(up{job="seavault_nodes"}[5m])`                                     | Stat        |
+| CPU %              | `rate(node_cpu_seconds_total{mode!="idle",instance="$instance"}[5m]) * 100` | Gauge       |
+| RAM usada (GB)     | `(node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes) / 1e9`       | Time series |
+| Disco usado %      | `100 - (node_filesystem_free_bytes / node_filesystem_size_bytes * 100)`     | Gauge       |
+| Latencia login p95 | `histogram_quantile(0.95, rate(seafile_login_duration_seconds_bucket[5m]))` | Bar gauge   |
+| Subida MB/s       | `rate(seafile_upload_bytes_total[1m]) / 1e6`                                | Time series |
+| Eventos fail-over  | `changes(up{job="seavault_nodes"}[5m])`                                     | Stat        |
 
-## 4. Crear alertas en Grafana
-1. Edita el panel deseado → pestaña Alert → Create alert rule.
-2. Query A
+### 3.4. Crear alertas en Grafana
+1. Editar el panel deseado → pestaña Alert → Create alert rule.
+2. Query A.
 ```promql
 changes(up{instance="$instance"}[2m]) > 0
 Condition = “is above 0” durante 1 min.
 ```
-3. Elige notificador (e-mail, Slack, Telegram…).
-4. Save → aparece en Alerting ▸ Rules.
+3. Elegir notificador (e-mail, Slack, Telegram…).
+4. Save. 
+5. Aparece en Alerting → Rules.
