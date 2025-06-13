@@ -4,6 +4,7 @@ set -e
 # Instalación y configuración de Chrony
 ############################################
 sudo apt update
+sudo apt-get update
 sudo apt install -y chrony
 sudo systemctl enable --now chrony
 sudo sed -i '/^pool /d' /etc/chrony/chrony.conf
@@ -75,17 +76,47 @@ sudo nginx -t && sudo systemctl reload nginx
 ############################################
 # Configurando DNS local con dnsmasq
 ############################################
-sudo apt install -y dnsmasq
+# --- Desactivar systemd-resolved para liberar el puerto 53 ----------
+if systemctl is-active --quiet systemd-resolved; then
+    echo "[INFO] Desactivando systemd-resolved (liberar puerto 53)…"
+    sudo systemctl disable --now systemd-resolved.service
+    sudo systemctl mask systemd-resolved.service      # evita arranques futuros
+else
+    echo "[INFO] systemd-resolved ya estaba inactivo."
+fi
+# ----------------------------------------------------------------------
 
+# --- DNS temporal para que apt funcione mientras no existe dnsmasq ---
+DNS_TEMP_APPLIED=false
+if ! command -v dnsmasq >/dev/null; then
+    echo "[INFO] Aplicando DNS público temporal (1.1.1.1) para apt…"
+    echo 'nameserver 1.1.1.1' | sudo tee /etc/resolv.conf >/dev/null
+    DNS_TEMP_APPLIED=true
+fi
+# ----------------------------------------------------------------------
+
+# Instalar dnsmasq (si aún no está)
+if ! command -v dnsmasq >/dev/null; then
+    sudo apt-get update -qq
+    sudo apt-get install -y dnsmasq
+else
+    echo "[INFO] dnsmasq ya estaba instalado – saltando apt."
+fi
+
+# Restaurar resolv.conf apuntando al propio gateway
+if $DNS_TEMP_APPLIED ; then
+    echo 'nameserver 127.0.0.1' | sudo tee /etc/resolv.conf >/dev/null
+fi
+
+# --- Configuración de hosts y parámetros -----------------------------
 sudo mkdir -p /etc/dnsmasq.hosts
 cat <<EOF | sudo tee /etc/dnsmasq.hosts/lan_hosts > /dev/null
 192.168.56.10 SVserver01 SVserv01.lan
-192.168.56.20 SVserver02 SVserv01.lan
-192.168.56.50 SVgateway seavault.lan
-192.168.56.50 SVrepositorio SVrep.lan
-192.168.56.50 SVmonitor SVmonitor.lan
+192.168.56.20 SVserver02 SVserv02.lan
+192.168.56.50 SVgateway  seavault.lan
+192.168.56.30 SVrepositorio SVrep.lan
+192.168.56.40 SVmonitor  SVmonitor.lan
 EOF
-
 
 cat <<EOF | sudo tee /etc/dnsmasq.conf > /dev/null
 domain-needed
@@ -94,8 +125,11 @@ no-resolv
 addn-hosts=/etc/dnsmasq.hosts/lan_hosts
 server=8.8.8.8
 EOF
+# ----------------------------------------------------------------------
 
-sudo systemctl restart dnsmasq
+# Reiniciar y habilitar dnsmasq
+sudo systemctl enable --now dnsmasq
+sudo systemctl restart dnsmasq  
 
 ############################################
 # Activando NAT
