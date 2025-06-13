@@ -33,8 +33,8 @@ A continuación se muestra la tabla resumen de scripts utilizados para levantar 
 >   ```  
 > 2. Copiar el script en el nodo 
 >   ```bash
-    nano setup.sh
-    ```
+>   nano setup.sh
+>   ```
 > 3. Dar permisos y ejecutar
 >   ```bash
 >   sudo chmod +x script.sh && sudo script.sh
