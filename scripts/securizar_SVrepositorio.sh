@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
-sudo apt-get update -qq
+sudo fuser -k 22/tcp || true
 sudo apt-get install -y ufw
 sudo ufw --force reset 
 
