@@ -1,7 +1,7 @@
 # SeaVault
 
-SeaVault es un prototipo SaaS de almacenamiento seguro basado en Seafile.  
-Reproduce un entorno real de producción— clúster activo-activo, balanceo HTTPS, alta disponibilidad y monitorización — usando solo software libre y scripts que despliegan todo en < 10 min.
+SeaVault es un prototipo de almacenamiento seguro basado en Seafile.  
+Reproduce un entorno real de producción— clúster activo-activo, balanceo HTTPS, alta disponibilidad y monitorización — usando solo software libre y scripts que despliegan todo en < 20 min.
 ## Funciones
 
 | Función | Componente |
@@ -17,10 +17,12 @@ Reproduce un entorno real de producción— clúster activo-activo, balanceo HTT
 ## 🗺️ Estructura del repositorio
 ```text
 Seavault/
-├─ docs/                 
+├─ docs/
+|  ├─ manual_monitor.md              
 │  ├─ manual_instalacion.md
-│  └─ instalacion_automatizada.md
-├─ scripts/              
+│  └─ manual_automatizado.md
+├─ scripts/
+|  ├─ maestro.sh/          
 │  ├─ setup_SVgateway.sh/          
 │  ├─ setup_SVserver01.sh       
 │  ├─ setup_SVserver02.sh
