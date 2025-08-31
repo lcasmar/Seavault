@@ -4,7 +4,7 @@
 Los siete scripts incluidos permiten instalar todos los servicios de SeaVault sin intervención manual.  
 Cada uno prepara su máquina, aplica reglas de cortafuegos, arranca los servicios y deja las métricas expuestas para Prometheus.
 Para agilizar la automatización, se incluye un script maestro que se encarga de lanzar cada script en su máquina correspondiente en el orden correcto.
-
+Los scripts de seguridad se deben ejecutar manualmente sobre las correspondientes máquinas para evitar conflictos.
 ## 2. Entorno
 Este manual se ha concebido y elaborado específicamente para un entorno compuesto por cinco máquinas virtuales en VirtualBox que ejecutan distintas ediciones de Ubuntu y cumplen roles bien definidos. Las características de CPU, memoria, almacenamiento y los servicios instalados en cada VM se han dimensionado para emplear los mínimos recursos de la máquina anfitriona. A continuación, la tabla detalla los requisitos de cada VM:
 
