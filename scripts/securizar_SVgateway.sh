@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 set -euo pipefail
-sudo apt-get update -qq
 sudo apt-get install -y ufw
 sudo ufw --force reset
 ############################################
@@ -16,6 +15,7 @@ LAN_NET="192.168.56.0/24"
 PROM_IP="192.168.56.40"
 
 # SSH (solo LAN)
+sudo ufw allow 22/tcp  #'SSH temporal'
 sudo ufw allow from $LAN_NET to any port 22 proto tcp
 
 # HTTP/HTTPS  (balanceador público)
